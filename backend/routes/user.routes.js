@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createUserController,
   loginController,
+  logoutController,
   profileController,
 } from "../controllers/user.controller.js";
 import { body } from "express-validator";
@@ -28,5 +29,7 @@ router.post(
 );
 
 router.get("/profile", authUser, profileController);
+
+router.get("/logout", authUser, logoutController);
 
 export default router;
