@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createProject } from "../controllers/project.controller";
+import { createProject } from "../controllers/project.controller.js	";
 import { body } from "express-validator";
 
 const router = Router();
