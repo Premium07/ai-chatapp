@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "../config/axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { UserContext } from "../context/UserContext";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ const Register = () => {
     setShowPassword(!showPassword);
   };
 
+  const { setUser } = useContext(UserContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -21,7 +23,8 @@ const Register = () => {
     axios
       .post("/register", { email, password })
       .then((res) => {
-        console.log(res.data);
+        localStorage.setItem("token", res.data.token);
+        setUser(res.data.user);
         setEmail("");
         setPassword("");
         navigate("/");

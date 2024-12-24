@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "../config/axios";
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { UserContext } from "../context/UserContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +14,8 @@ const Login = () => {
     setShowPassword(!showPassword);
   };
 
+  const { setUser } = useContext(UserContext);
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,7 +24,8 @@ const Login = () => {
     axios
       .post("/login", { email, password })
       .then((res) => {
-        console.log(res.data);
+        localStorage.setItem("token", res.data.token);
+        setUser(res.data.user);
         setEmail("");
         setPassword("");
         navigate("/");
@@ -51,9 +54,14 @@ const Login = () => {
             />
           </div>
           <div className="mb-6 relative">
-            <label className="block text-sm font-medium mb-2" htmlFor="password">Password</label>
+            <label
+              className="block text-sm font-medium mb-2"
+              htmlFor="password"
+            >
+              Password
+            </label>
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
