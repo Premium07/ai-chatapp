@@ -1,12 +1,27 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "../config/axios";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const navigate = useNavigate();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    axios
+      .post("/register", { email, password })
+      .then((res) => {
+        console.log(res.data);
+        setEmail("");
+        setPassword("");
+        navigate("/");
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
   };
 
   return (
@@ -53,7 +68,7 @@ const Register = () => {
         <p className="mt-4 text-center">
           Already have an account?{" "}
           <Link to="/login" className="text-blue-500 hover:underline">
-           Login
+            Login
           </Link>
         </p>
       </div>
