@@ -12,7 +12,7 @@ export const createProject = async (req, res) => {
   try {
     const { name } = req.body;
 
-    const loggedUser = await User.findOne({ email });
+    const loggedUser = await User.findOne({ email: req.user.email });
 
     const userId = loggedUser._id;
 
