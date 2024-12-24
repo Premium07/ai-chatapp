@@ -9,7 +9,12 @@ export const createProjectService = async ({ name, userId }) => {
     throw new Error("User id is required");
   }
 
-  const project = await Project.create({ name, users: [userId] });
+  let project;
+  try {
+    project = await Project.create({ name, users: [userId] });
+  } catch (error) {
+    throw new Error(error.message);
+  }
 
   return project;
 };
