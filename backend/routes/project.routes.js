@@ -5,6 +5,7 @@ import {
   createProject,
   addUsersToProject,
   getAllProjects,
+  getProjectById,
 } from "../controllers/project.controller.js";
 
 const router = Router();
@@ -30,5 +31,7 @@ router.put(
     .withMessage("Users must be an array of strings"),
   addUsersToProject
 );
+
+router.get("/getproject/:projectId", authUser, getProjectById);
 
 export default router;
