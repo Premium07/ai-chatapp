@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Project from "../models/project.model.js";
 
 export const createProjectService = async ({ name, userId }) => {
@@ -27,4 +28,50 @@ export const getAllProjectByUserIdService = async ({ userId }) => {
   const allUserProjects = await Project.find({ users: userId });
 
   return allUserProjects;
-};  
+};
+
+export const addUsersToProjectService = async ({
+  projectId,
+  users,
+  userId,
+}) => {
+  if (!projectId) {
+    throw new Error("Project id is required");
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(projectId)) {
+    throw new Error("Project id is invalid");
+  }
+
+  if (!users) {
+    throw new Error("Users are required");
+  }
+
+  if (
+    !Array.isArray(users) ||
+    users.some((user) => !mongoose.Types.ObjectId.isValid(user))
+  ) {
+    throw new Error("Project id is invalid");
+  }
+
+  if (!userId) {
+    throw new Error("User id is required");
+  }
+  if (!mongoose.Types.ObjectId.isValid(userId)) {
+    throw new Error("Project id is invalid");
+  }
+
+  const project = await Project.findOne({ _id: projectId, users: userId });
+
+  if (!project) {
+    throw new Error("User is not authorized to add users to this project");
+  }
+
+  const updatedProject = await Project.findByIdAndUpdate(
+    { _id: projectId },
+    { $addToSet: { users: { $each: users } } },
+    { new: true }
+  );
+
+  return updatedProject;
+};

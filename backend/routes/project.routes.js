@@ -1,8 +1,11 @@
 import { Router } from "express";
-import { createProject } from "../controllers/project.controller.js	";
 import { body } from "express-validator";
 import { authUser } from "../middlewares/auth.middleware.js";
-import { getAllProjects } from "../controllers/project.controller.js";
+import {
+  createProject,
+  addUsersToProject,
+  getAllProjects,
+} from "../controllers/project.controller.js";
 
 const router = Router();
 
@@ -14,5 +17,18 @@ router.post(
 );
 
 router.get("/allprojects", authUser, getAllProjects);
+
+router.put(
+  "/add-user",
+  authUser,
+  body("projectId").isString().withMessage("Project Id is required"),
+  body("users")
+    .isArray({ min: 1 })
+    .withMessage("Users must be an array")
+    .bail()
+    .custom((users) => users.every((user) => typeof user === "string"))
+    .withMessage("Users must be an array of strings"),
+  addUsersToProject
+);
 
 export default router;

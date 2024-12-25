@@ -1,4 +1,5 @@
 import {
+  addUsersToProjectService,
   createProjectService,
   getAllProjectByUserIdService,
 } from "../services/project.service.js";
@@ -35,7 +36,32 @@ export const getAllProjects = async (req, res) => {
       userId: loggedInUser._id,
     });
 
-    return res.status(200).json({ projetcs: allUserProjects });
+    return res.status(200).json({ projects: allUserProjects });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ error: error.message });
+  }
+};
+
+export const addUsersToProject = async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { projectId, users } = req.body;
+
+    const loggedInUser = await User.findOne({ email: req.user.email });
+
+    const project = await addUsersToProjectService({
+      projectId,
+      users,
+      userId: loggedInUser._id,
+    });
+
+    return res.status(200).json({ project });
   } catch (error) {
     console.log(error);
     res.status(404).json({ error: error.message });
