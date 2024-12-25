@@ -1,4 +1,7 @@
-import { createProjectService } from "../services/project.service.js";
+import {
+  createProjectService,
+  getAllProjectByUserIdService,
+} from "../services/project.service.js";
 import { validationResult } from "express-validator";
 import User from "../models/user.model.js";
 
@@ -21,5 +24,20 @@ export const createProject = async (req, res) => {
     return res.status(201).json(newProject);
   } catch (error) {
     return res.status(400).json({ error: error.message });
+  }
+};
+
+export const getAllProjects = async (req, res) => {
+  try {
+    const loggedInUser = await User.findOne({ email: req.user.email });
+
+    const allUserProjects = await getAllProjectByUserIdService({
+      userId: loggedInUser._id,
+    });
+
+    return res.status(200).json({ projetcs: allUserProjects });
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({ error: error.message });
   }
 };

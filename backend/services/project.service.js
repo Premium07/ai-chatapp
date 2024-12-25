@@ -18,3 +18,13 @@ export const createProjectService = async ({ name, userId }) => {
 
   return project;
 };
+
+export const getAllProjectByUserIdService = async ({ userId }) => {
+  if (!userId) {
+    throw new Error("User id is required");
+  }
+
+  const allUserProjects = await Project.find({ users: userId });
+
+  return allUserProjects;
+};  
