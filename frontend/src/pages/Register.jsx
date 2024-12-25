@@ -21,7 +21,7 @@ const Register = () => {
     e.preventDefault();
 
     axios
-      .post("/register", { email, password })
+      .post("/users/register", { email, password })
       .then((res) => {
         localStorage.setItem("token", res.data.token);
         setUser(res.data.user);

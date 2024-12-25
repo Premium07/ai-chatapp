@@ -22,7 +22,7 @@ const Login = () => {
     e.preventDefault();
 
     axios
-      .post("/login", { email, password })
+      .post("/users/login", { email, password })
       .then((res) => {
         localStorage.setItem("token", res.data.token);
         setUser(res.data.user);
