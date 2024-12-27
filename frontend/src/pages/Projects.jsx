@@ -1,22 +1,49 @@
 import { useLocation } from "react-router-dom";
-import { FaUserGroup } from "react-icons/fa6";
+import { FaPlus, FaUserGroup } from "react-icons/fa6";
 import { IoCloseSharp } from "react-icons/io5";
 import { LuSend } from "react-icons/lu";
 import { FaUserAlt } from "react-icons/fa";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import axios from "../config/axios";
 
 const Projects = () => {
   const location = useLocation();
 
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState([]);
+  const [users, setUsers] = useState([]);
 
-  // console.log(location.state);
+  useEffect(() => {
+    axios
+      .get("/users/allusers")
+      .then((res) => {
+        setUsers(res.data.users);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
+
+  const handleUserClick = (id) => {
+    setSelectedUserId([...selectedUserId, id]);
+    // console.log(id);
+  };
+
+  console.log(location.state);
 
   return (
     <main className="h-screen w-screen flex">
       <section className="relative h-full flex flex-col min-w-96 bg-slate-300">
-        <header className="flex justify-end p-2 px-4 w-full bg-slate-100">
+        <header className="flex justify-between items-center p-2 px-4 w-full bg-slate-100">
+          <button
+            className="flex items-center gap-1"
+            onClick={() => setIsModalOpen(true)}
+          >
+            <FaPlus />
+            <p className="text-sm">Add collaborator</p>
+          </button>
           <button
             className="p-2"
             onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
@@ -73,6 +100,41 @@ const Projects = () => {
           </div>
         </div>
       </section>
+
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+          // onClick={() => setIsModalOpen(false)}
+        >
+          <div className="bg-white p-4 rounded-md w-96 max-w-full relative">
+            <header className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Select User</h2>
+              <button onClick={() => setIsModalOpen(false)}>
+                <IoCloseSharp size={25} />
+              </button>
+            </header>
+            <div className="flex flex-col gap-2 mb-16 max-h-96 overflow-y-auto">
+              {users.map((user) => (
+                <div
+                  key={user._id}
+                  className={`p-2 cursor-pointer hover:bg-slate-200 ${
+                    selectedUserId.indexOf(user._id) != -1 ? "bg-slate-200" : ""
+                  } flex items-center gap-2`}
+                  onClick={() => handleUserClick(user._id)}
+                >
+                  <div className=" aspect-square rounded-full size-fit flex items-center justify-center p-2 bg-slate-600 text-white">
+                    <FaUserAlt />
+                  </div>
+                  {user.email}
+                </div>
+              ))}
+            </div>
+            <button className=" absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 px-4 rounded-md text-white mx-auto">
+              Add Collaborators
+            </button>
+          </div>
+        </div>
+      )}
       <section></section>
     </main>
   );
