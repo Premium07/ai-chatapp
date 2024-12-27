@@ -13,9 +13,18 @@ const Projects = () => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState([]);
+  const [project, setProject] = useState(location.state.project);
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
+    axios
+      .get(`/projects/getproject/${location.state.project._id}`)
+      .then((res) => {
+        // console.log(res.data.project);
+        setProject(res.data.project);
+      })
+      .catch((err) => console.log(err.message));
+
     axios
       .get("/users/allusers")
       .then((res) => {
@@ -24,14 +33,34 @@ const Projects = () => {
       .catch((err) => {
         console.log(err);
       });
-  }, []);
+  }, [location.state.project._id]);
 
   const handleUserClick = (id) => {
-    setSelectedUserId([...selectedUserId, id]);
-    // console.log(id);
+    setSelectedUserId((prevSelectedUserId) => {
+      const newSelectedUserId = new Set(prevSelectedUserId);
+      if (newSelectedUserId.has(id)) {
+        newSelectedUserId.delete(id);
+      } else {
+        newSelectedUserId.add(id);
+      }
+
+      console.log(Array.from(newSelectedUserId));
+      return newSelectedUserId;
+    });
   };
 
-  console.log(location.state);
+  const addCollaborators = () => {
+    axios
+      .put("/projects/add-user", {
+        projectId: location.state.project._id,
+        users: Array.from(selectedUserId),
+      })
+      .then((res) => {
+        console.log(res.data);
+        setIsModalOpen(false);
+      })
+      .catch((err) => console.log(err));
+  };
 
   return (
     <main className="h-screen w-screen flex">
@@ -84,19 +113,29 @@ const Projects = () => {
             isSidePanelOpen ? "translate-x-0" : "-translate-x-full"
           } top-0`}
         >
-          <header className="w-full flex justify-end p-2 px-3 bg-slate-200">
+          <header className="w-full flex justify-between items-center p-2 px-3 bg-slate-200">
+            <h2 className="font-semibold text-lg">Collaborators</h2>
             <button className="p-2" onClick={() => setIsSidePanelOpen(false)}>
               <IoCloseSharp size={25} />
             </button>
           </header>
 
           <div className="users flex flex-col gap-2">
-            <div className="user flex items-center gap-2 cursor-pointer hover:bg-slate-200 p-2">
-              <div className=" aspect-square rounded-full size-fit flex items-center justify-center p-2 bg-slate-600 text-white">
-                <FaUserAlt />
-              </div>
-              <h2 className="font-semibold text-lg">username</h2>
-            </div>
+            {project.users?.length > 0 ? (
+              project.users.map((user) => (
+                <div
+                  key={user._id}
+                  className="user flex items-center gap-2 cursor-pointer hover:bg-slate-200 p-2"
+                >
+                  <div className="aspect-square rounded-full size-fit flex items-center justify-center p-2 bg-slate-600 text-white">
+                    <FaUserAlt size={10} />
+                  </div>
+                  <h2 className="font-semibold">{user.email}</h2>
+                </div>
+              ))
+            ) : (
+              <p>No users found</p>
+            )}
           </div>
         </div>
       </section>
@@ -118,7 +157,9 @@ const Projects = () => {
                 <div
                   key={user._id}
                   className={`p-2 cursor-pointer hover:bg-slate-200 ${
-                    selectedUserId.indexOf(user._id) != -1 ? "bg-slate-200" : ""
+                    Array.from(selectedUserId).indexOf(user._id) != -1
+                      ? "bg-slate-200"
+                      : ""
                   } flex items-center gap-2`}
                   onClick={() => handleUserClick(user._id)}
                 >
@@ -129,7 +170,10 @@ const Projects = () => {
                 </div>
               ))}
             </div>
-            <button className=" absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 px-4 rounded-md text-white mx-auto">
+            <button
+              onClick={addCollaborators}
+              className=" absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 px-4 rounded-md text-white mx-auto"
+            >
               Add Collaborators
             </button>
           </div>
