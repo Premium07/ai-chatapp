@@ -10,3 +10,11 @@ export const initializeSocket = () => {
   });
   return socketInstance;
 };
+
+export const receiveMsg = (eventName, cb) => {
+  socketInstance.on(eventName, cb);
+};
+
+export const sendMsg = (eventName, cb) => {
+  socketInstance.emit(eventName, cb);
+};

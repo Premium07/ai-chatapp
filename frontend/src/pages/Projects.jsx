@@ -6,7 +6,7 @@ import { FaUserAlt } from "react-icons/fa";
 
 import { useEffect, useState } from "react";
 import axios from "../config/axios";
-import { initializeSocket } from "../config/socket";
+import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 
 const Projects = () => {
   const location = useLocation();
