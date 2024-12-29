@@ -4,9 +4,10 @@ import { IoCloseSharp } from "react-icons/io5";
 import { LuSend } from "react-icons/lu";
 import { FaUserAlt } from "react-icons/fa";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
+import { UserContext } from "../context/UserContext";
 
 const Projects = () => {
   const location = useLocation();
@@ -16,27 +17,9 @@ const Projects = () => {
   const [selectedUserId, setSelectedUserId] = useState([]);
   const [project, setProject] = useState(location.state.project);
   const [users, setUsers] = useState([]);
+  const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    initializeSocket();
-
-    axios
-      .get(`/projects/getproject/${location.state.project._id}`)
-      .then((res) => {
-        // console.log(res.data.project);
-        setProject(res.data.project);
-      })
-      .catch((err) => console.log(err.message));
-
-    axios
-      .get("/users/allusers")
-      .then((res) => {
-        setUsers(res.data.users);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }, [location.state.project._id]);
+  const { user } = useContext(UserContext);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -64,6 +47,40 @@ const Projects = () => {
       })
       .catch((err) => console.log(err));
   };
+
+  const sendMessage = () => {
+    sendMsg("project-message", {
+      message,
+      sender: user._id,
+    });
+
+    setMessage("");
+  };
+
+  useEffect(() => {
+    initializeSocket(project._id);
+
+    receiveMsg("project-message", (data) => {
+      console.log(data);
+    });
+
+    axios
+      .get(`/projects/getproject/${location.state.project._id}`)
+      .then((res) => {
+        // console.log(res.data.project);
+        setProject(res.data.project);
+      })
+      .catch((err) => console.log(err.message));
+
+    axios
+      .get("/users/allusers")
+      .then((res) => {
+        setUsers(res.data.users);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }, []);
 
   return (
     <main className="h-screen w-screen flex">
@@ -101,11 +118,16 @@ const Projects = () => {
           <div className="flex items-center w-full bg-slate-100">
             <input
               className="p-2 px-4 w-full outline-none"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
               type="text"
               placeholder="Enter message"
-              name=""
+              name="message"
             />
-            <button className="w-flex-grow h-full px-4 bg-slate-700 text-white">
+            <button
+              onClick={sendMessage}
+              className="w-flex-grow h-full px-4 bg-slate-700 text-white"
+            >
               <LuSend size={20} />
             </button>
           </div>
@@ -175,7 +197,7 @@ const Projects = () => {
             </div>
             <button
               onClick={addCollaborators}
-              className=" absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 px-4 rounded-md text-white mx-auto"
+              className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-blue-600 p-2 px-4 rounded-md text-white mx-auto"
             >
               Add Collaborators
             </button>
