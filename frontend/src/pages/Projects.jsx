@@ -6,6 +6,7 @@ import { FaUserAlt } from "react-icons/fa";
 
 import { useEffect, useState } from "react";
 import axios from "../config/axios";
+import { initializeSocket } from "../config/socket";
 
 const Projects = () => {
   const location = useLocation();
@@ -17,6 +18,8 @@ const Projects = () => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
+    initializeSocket();
+
     axios
       .get(`/projects/getproject/${location.state.project._id}`)
       .then((res) => {
