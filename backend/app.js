@@ -4,6 +4,7 @@ import morgan from "morgan";
 import connectDB from "./db/database.js";
 import userRoutes from "./routes/user.routes.js";
 import projectRoutes from "./routes/project.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 import cors from "cors";
 
 connectDB();
@@ -19,5 +20,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/users", userRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/ai", aiRoutes);
 
 export default app;
