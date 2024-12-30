@@ -7,3 +7,11 @@
 * {
   font-family: "Rubik", serif;
 }
+
+.messageBox::-webkit-scrollbar {
+  display: none;
+}
+
+.messageBox {
+  scroll-behavior: smooth;
+}

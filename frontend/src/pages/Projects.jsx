@@ -4,20 +4,21 @@ import { IoCloseSharp } from "react-icons/io5";
 import { LuSend } from "react-icons/lu";
 import { FaUserAlt } from "react-icons/fa";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 import { UserContext } from "../context/UserContext";
 
 const Projects = () => {
   const location = useLocation();
-
+  
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState([]);
   const [project, setProject] = useState(location.state.project);
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
+  const messageBoxRef = useRef(null);
 
   const { user } = useContext(UserContext);
 
@@ -30,7 +31,7 @@ const Projects = () => {
         newSelectedUserId.add(id);
       }
 
-      console.log(Array.from(newSelectedUserId));
+      // console.log(Array.from(newSelectedUserId));
       return newSelectedUserId;
     });
   };
@@ -51,17 +52,65 @@ const Projects = () => {
   const sendMessage = () => {
     sendMsg("project-message", {
       message,
-      sender: user._id,
+      sender: user,
     });
 
+    appendOutgoingMsg(message);
+
     setMessage("");
+  };
+
+  const appendIncomingMsg = (messageObj) => {
+    const messageBox = document.querySelector(".messageBox");
+    const message = document.createElement("div");
+    message.classList.add(
+      "max-w-56",
+      "flex",
+      "flex-col",
+      "bg-slate-50",
+      "w-fit",
+      "rounded-md",
+      "p-2"
+    );
+    message.innerHTML = `<small className='opacity-65 text-xs'>${messageObj.sender.email}</small>
+    <p className='text-sm font-semibold'>${messageObj.message}</p>`;
+
+    messageBox.appendChild(message);
+
+    scrollToBottom();
+  };
+
+  const appendOutgoingMsg = (message) => {
+    const messageBox = document.querySelector(".messageBox");
+    const newMessage = document.createElement("div");
+    newMessage.classList.add(
+      "ml-auto",
+      "max-w-56",
+      "flex",
+      "flex-col",
+      "bg-slate-50",
+      "w-fit",
+      "rounded-md",
+      "p-2"
+    );
+    newMessage.innerHTML = `<small className='opacity-65 text-xs'>${user.email}</small>
+    <p className='text-sm font-semibold'>${message}</p>`;
+
+    messageBox.appendChild(newMessage);
+
+    scrollToBottom();
+  };
+
+  const scrollToBottom = () => {
+    messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
   };
 
   useEffect(() => {
     initializeSocket(project._id);
 
     receiveMsg("project-message", (data) => {
-      console.log(data);
+      // console.log(data);
+      appendIncomingMsg(data);
     });
 
     axios
@@ -85,7 +134,7 @@ const Projects = () => {
   return (
     <main className="h-screen w-screen flex">
       <section className="relative h-full flex flex-col min-w-96 bg-slate-300">
-        <header className="flex justify-between items-center p-2 px-4 w-full bg-slate-100">
+        <header className="absolute top-0 flex justify-between items-center p-2 px-4 w-full bg-slate-100">
           <button
             className="flex items-center gap-1"
             onClick={() => setIsModalOpen(true)}
@@ -100,22 +149,12 @@ const Projects = () => {
             <FaUserGroup />
           </button>
         </header>
-        <section className="flex-grow flex flex-col">
-          <div className="flex-grow flex flex-col gap-2 p-1">
-            <div className="incoming-msg max-w-56 flex flex-col bg-slate-50 w-fit rounded-md p-2 ">
-              <small className="opacity-65 text-xs">example@gmail.com</small>
-              <p className="text-sm font-semibold">
-                Lorem ipsum dolor sit. Lorem ipsum dolor sit.
-              </p>
-            </div>
-            <div className="outgoing-msg max-w-56 ml-auto flex flex-col bg-slate-50 w-fit rounded-md p-2 ">
-              <small className="opacity-65 text-xs font-normal">
-                example@gmail.com
-              </small>
-              <p className="text-sm font-semibold">Lorem ipsum dolor sit.</p>
-            </div>
-          </div>
-          <div className="flex items-center w-full bg-slate-100">
+        <section className="flex-grow flex flex-col pt-14 pb-12 h-full relative">
+          <div
+            ref={messageBoxRef}
+            className="messageBox flex-grow flex flex-col gap-2 p-1 overflow-auto max-h-full"
+          ></div>
+          <div className="flex items-center w-full bg-slate-100 absolute bottom-0">
             <input
               className="p-2 px-4 w-full outline-none"
               value={message}
@@ -123,10 +162,11 @@ const Projects = () => {
               type="text"
               placeholder="Enter message"
               name="message"
+              required
             />
             <button
-              onClick={sendMessage}
-              className="w-flex-grow h-full px-4 bg-slate-700 text-white"
+              onClick={message ? sendMessage : sendText}
+              className="w-flex-grow h-full p-2 bg-slate-700 text-white"
             >
               <LuSend size={20} />
             </button>
@@ -147,9 +187,9 @@ const Projects = () => {
 
           <div className="users flex flex-col gap-2">
             {project.users?.length > 0 ? (
-              project.users.map((user) => (
+              project.users.map((user, index) => (
                 <div
-                  key={user._id}
+                  key={user._id || index}
                   className="user flex items-center gap-2 cursor-pointer hover:bg-slate-200 p-2"
                 >
                   <div className="aspect-square rounded-full size-fit flex items-center justify-center p-2 bg-slate-600 text-white">
