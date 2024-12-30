@@ -11,7 +11,7 @@ import { UserContext } from "../context/UserContext";
 
 const Projects = () => {
   const location = useLocation();
-  
+
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState([]);
@@ -165,7 +165,7 @@ const Projects = () => {
               required
             />
             <button
-              onClick={message ? sendMessage : sendText}
+              onClick={message}
               className="w-flex-grow h-full p-2 bg-slate-700 text-white"
             >
               <LuSend size={20} />
