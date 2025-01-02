@@ -137,7 +137,10 @@ const Projects = () => {
         <header className="absolute top-0 flex justify-between items-center p-2 px-4 w-full bg-slate-100">
           <button
             className="flex items-center gap-1"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              // console.log("clicked");
+              setIsModalOpen(true);
+            }}
           >
             <FaPlus />
             <p className="text-sm">Add collaborator</p>
@@ -165,7 +168,7 @@ const Projects = () => {
               required
             />
             <button
-              onClick={message}
+              onClick={sendMessage}
               className="w-flex-grow h-full p-2 bg-slate-700 text-white"
             >
               <LuSend size={20} />
@@ -206,10 +209,7 @@ const Projects = () => {
       </section>
 
       {isModalOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
-          // onClick={() => setIsModalOpen(false)}
-        >
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-4 rounded-md w-96 max-w-full relative">
             <header className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Select User</h2>
