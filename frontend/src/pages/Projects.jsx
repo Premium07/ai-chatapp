@@ -3,8 +3,8 @@ import { FaPlus, FaUserGroup } from "react-icons/fa6";
 import { IoCloseSharp } from "react-icons/io5";
 import { LuSend } from "react-icons/lu";
 import { FaUserAlt } from "react-icons/fa";
-
 import { useContext, useEffect, useRef, useState } from "react";
+import Markdown from "markdown-to-jsx";
 import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 import { UserContext } from "../context/UserContext";
@@ -20,6 +20,8 @@ const Projects = () => {
   const [message, setMessage] = useState("");
   const messageBoxRef = useRef(null);
 
+  const [messages, setMessages] = useState([]);
+
   const { user } = useContext(UserContext);
 
   const handleUserClick = (id) => {
@@ -31,7 +33,6 @@ const Projects = () => {
         newSelectedUserId.add(id);
       }
 
-      // console.log(Array.from(newSelectedUserId));
       return newSelectedUserId;
     });
   };
@@ -50,73 +51,27 @@ const Projects = () => {
   };
 
   const sendMessage = () => {
-    sendMsg("project-message", {
+    const newMessage = {
       message,
       sender: user,
-    });
+    };
 
-    appendOutgoingMsg(message);
+    sendMsg("project-message", newMessage);
 
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
     setMessage("");
-  };
-
-  const appendIncomingMsg = (messageObj) => {
-    const messageBox = document.querySelector(".messageBox");
-    const message = document.createElement("div");
-    message.classList.add(
-      "max-w-56",
-      "flex",
-      "flex-col",
-      "bg-slate-50",
-      "w-fit",
-      "rounded-md",
-      "p-2"
-    );
-    message.innerHTML = `<small className='opacity-65 text-xs'>${messageObj.sender.email}</small>
-    <p className='text-sm font-semibold'>${messageObj.message}</p>`;
-
-    messageBox.appendChild(message);
-
-    scrollToBottom();
-  };
-
-  const appendOutgoingMsg = (message) => {
-    const messageBox = document.querySelector(".messageBox");
-    const newMessage = document.createElement("div");
-    newMessage.classList.add(
-      "ml-auto",
-      "max-w-56",
-      "flex",
-      "flex-col",
-      "bg-slate-50",
-      "w-fit",
-      "rounded-md",
-      "p-2"
-    );
-    newMessage.innerHTML = `<small className='opacity-65 text-xs'>${user.email}</small>
-    <p className='text-sm font-semibold'>${message}</p>`;
-
-    messageBox.appendChild(newMessage);
-
-    scrollToBottom();
-  };
-
-  const scrollToBottom = () => {
-    messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
   };
 
   useEffect(() => {
     initializeSocket(project._id);
 
     receiveMsg("project-message", (data) => {
-      // console.log(data);
-      appendIncomingMsg(data);
+      setMessages((prevMessages) => [...prevMessages, data]);
     });
 
     axios
       .get(`/projects/getproject/${location.state.project._id}`)
       .then((res) => {
-        // console.log(res.data.project);
         setProject(res.data.project);
       })
       .catch((err) => console.log(err.message));
@@ -129,7 +84,13 @@ const Projects = () => {
       .catch((err) => {
         console.log(err);
       });
-  }, []);
+  }, [project._id, location.state.project._id]);
+
+  useEffect(() => {
+    if (messageBoxRef.current) {
+      messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   return (
     <main className="h-screen w-screen flex">
@@ -137,10 +98,7 @@ const Projects = () => {
         <header className="absolute top-0 flex justify-between items-center p-2 px-4 w-full bg-slate-100">
           <button
             className="flex items-center gap-1"
-            onClick={() => {
-              // console.log("clicked");
-              setIsModalOpen(true);
-            }}
+            onClick={() => setIsModalOpen(true)}
           >
             <FaPlus />
             <p className="text-sm">Add collaborator</p>
@@ -156,7 +114,29 @@ const Projects = () => {
           <div
             ref={messageBoxRef}
             className="messageBox flex-grow flex flex-col gap-2 p-1 overflow-auto max-h-full"
-          ></div>
+          >
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`${
+                  message.sender._id === "ai" ? "max-w-96" : "ml-auto max-w-56"
+                }  flex flex-col bg-slate-50 rounded-md p-2`}
+              >
+                <small className="opacity-65 text-xs pb-2 font-semibold">
+                  {message.sender.email}
+                </small>
+                <p className="text-sm">
+                  {message.sender._id === "ai" ? (
+                    <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2">
+                      <Markdown>{message.message}</Markdown>
+                    </div>
+                  ) : (
+                    message.message
+                  )}
+                </p>
+              </div>
+            ))}
+          </div>
           <div className="flex items-center w-full bg-slate-100 absolute bottom-0">
             <input
               className="p-2 px-4 w-full outline-none"
@@ -222,7 +202,7 @@ const Projects = () => {
                 <div
                   key={user._id}
                   className={`p-2 cursor-pointer hover:bg-slate-200 ${
-                    Array.from(selectedUserId).indexOf(user._id) != -1
+                    Array.from(selectedUserId).indexOf(user._id) !== -1
                       ? "bg-slate-200"
                       : ""
                   } flex items-center gap-2`}
