@@ -52,6 +52,8 @@ io.on("connection", (socket) => {
   socket.on("project-message", async (data) => {
     const message = data.message;
     const aiIsPresent = message.includes("@ai");
+    socket.broadcast.to(socket.roomId).emit("project-message", data);
+
 
     if (aiIsPresent) {
       const prompt = message.replace("@ai", "");
@@ -64,9 +66,9 @@ io.on("connection", (socket) => {
           email: "AI Agent",
         },
       });
-    }
 
-    socket.broadcast.to(socket.roomId).emit("project-message", data);
+      return;
+    }
   });
 
   socket.on("disconnect", () => {
