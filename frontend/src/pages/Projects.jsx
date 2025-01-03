@@ -8,6 +8,22 @@ import Markdown from "markdown-to-jsx";
 import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 import { UserContext } from "../context/UserContext";
+import hljs from "highlight.js";
+
+function SyntaxHighlightedCode(props) {
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current && props.className?.includes("lang-") && window.hljs) {
+      window.hljs.highlightElement(ref.current);
+
+      // hljs won't reprocess the element unless this attribute is removed
+      ref.current.removeAttribute("data-highlighted");
+    }
+  }, [props.className, props.children]);
+
+  return <code {...props} ref={ref} />;
+}
 
 const Projects = () => {
   const location = useLocation();
@@ -60,6 +76,19 @@ const Projects = () => {
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     setMessage("");
+  };
+
+  const aiResponseMessage = (message) => {
+    const messageObj = JSON.parse(message);
+    return (
+      <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2">
+        <Markdown
+          // eslint-disable-next-line react/no-children-prop
+          children={messageObj.text}
+          options={{ overrides: { code: SyntaxHighlightedCode } }}
+        />
+      </div>
+    );
   };
 
   useEffect(() => {
@@ -122,19 +151,15 @@ const Projects = () => {
                   message.sender._id === "ai" ? "max-w-96" : " max-w-56"
                 } ${
                   message.sender._id == user._id && "ml-auto"
-                } flex flex-col bg-slate-50 rounded-md p-2`}
+                } flex flex-col bg-slate-50 w-fit rounded-md p-2`}
               >
                 <small className="opacity-65 text-xs pb-2 font-semibold">
                   {message.sender.email}
                 </small>
                 <p className="text-sm">
-                  {message.sender._id === "ai" ? (
-                    <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2">
-                      <Markdown>{message.message}</Markdown>
-                    </div>
-                  ) : (
-                    message.message
-                  )}
+                  {message.sender._id === "ai"
+                    ? aiResponseMessage(message.message)
+                    : message.message}
                 </p>
               </div>
             ))}
