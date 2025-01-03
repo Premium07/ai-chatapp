@@ -119,8 +119,10 @@ const Projects = () => {
               <div
                 key={index}
                 className={`${
-                  message.sender._id === "ai" ? "max-w-96" : "ml-auto max-w-56"
-                }  flex flex-col bg-slate-50 rounded-md p-2`}
+                  message.sender._id === "ai" ? "max-w-96" : " max-w-56"
+                } ${
+                  message.sender._id == user._id && "ml-auto"
+                } flex flex-col bg-slate-50 rounded-md p-2`}
               >
                 <small className="opacity-65 text-xs pb-2 font-semibold">
                   {message.sender.email}
