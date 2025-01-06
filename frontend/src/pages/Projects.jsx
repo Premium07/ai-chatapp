@@ -1,5 +1,6 @@
 import { useLocation } from "react-router-dom";
 import { FaPlus, FaUserGroup } from "react-icons/fa6";
+import { IoMdClose } from "react-icons/io";
 import { IoCloseSharp } from "react-icons/io5";
 import { LuSend } from "react-icons/lu";
 import { FaUserAlt } from "react-icons/fa";
@@ -9,6 +10,7 @@ import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 import { UserContext } from "../context/UserContext";
 import hljs from "highlight.js";
+import "highlight.js/styles/github.css";
 
 function SyntaxHighlightedCode(props) {
   const ref = useRef(null);
@@ -35,10 +37,13 @@ const Projects = () => {
   const [users, setUsers] = useState([]);
   const [message, setMessage] = useState("");
   const messageBoxRef = useRef(null);
-
   const [messages, setMessages] = useState([]);
 
   const { user } = useContext(UserContext);
+
+  const [fileTree, setFileTree] = useState({});
+  const [currentFile, setCurrentFile] = useState(null);
+  const [openFiles, setOpenFiles] = useState([]);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -95,7 +100,22 @@ const Projects = () => {
     initializeSocket(project._id);
 
     receiveMsg("project-message", (data) => {
-      setMessages((prevMessages) => [...prevMessages, data]);
+      try {
+        const message =
+          typeof data.message === "string"
+            ? JSON.parse(data.message)
+            : data.message;
+
+        if (message.fileTree) {
+          setFileTree(message.fileTree);
+        }
+
+        setMessages((prevMessages) => [...prevMessages, data]);
+      } catch (error) {
+        console.error("Error parsing message:", error);
+        console.error("Invalid message content:", data.message);
+        setMessages(error, data.message);
+      }
     });
 
     axios
@@ -120,6 +140,20 @@ const Projects = () => {
       messageBoxRef.current.scrollTop = messageBoxRef.current.scrollHeight;
     }
   }, [messages]);
+
+  function saveFileTree(ft) {
+    axios
+      .put("/projects/update-file-tree", {
+        projectId: project._id,
+        fileTree: ft,
+      })
+      .then((res) => {
+        console.log(res.data);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  }
 
   return (
     <main className="h-screen w-screen flex">
@@ -251,7 +285,87 @@ const Projects = () => {
           </div>
         </div>
       )}
-      <section></section>
+      <section className=" flex-grow h-full flex ">
+        <section className="expolrer h-full max-w-64 min-w-52 bg-slate-200">
+          <div className="file-tree w-full ">
+            {Object.keys(fileTree).map((file, index) => (
+              <button
+                key={index}
+                onClick={() => {
+                  setCurrentFile(file);
+                  setOpenFiles([...new Set([...openFiles, file])]);
+                }}
+                className="tree-elem cursor-pointer p-2 px-4 flex items-center gap-2 bg-slate-300 w-full"
+              >
+                <p className=" text-lg">{file}</p>
+              </button>
+            ))}
+          </div>
+        </section>
+        {currentFile && (
+          <section className="code-editor flex flex-col flex-grow h-full font-mono">
+            <div className="top flex">
+              {openFiles?.map((file, index) => {
+                return (
+                  <div
+                    key={index}
+                    className={`cursor-pointer p-2 px-4 flex items-center w-fit gap-2 bg-slate-300 ${
+                      currentFile === file && "bg-slate-400"
+                    }`}
+                    onClick={() => setCurrentFile(file)}
+                  >
+                    <p className="">{file}</p>
+                    <button
+                      onClick={() =>
+                        setOpenFiles(openFiles.filter((f) => f !== file))
+                      }
+                    >
+                      <IoMdClose />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="bottom flex flex-grow max-w-full shrink overflow-auto">
+              {fileTree[currentFile] && (
+                <div className="code-editor-area h-full overflow-auto flex-grow bg-slate-950">
+                  <pre className="hljs h-full">
+                    <code
+                      className="hljs h-full outline-none"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => {
+                        const updatedContent = e.target.innerText;
+                        const ft = {
+                          ...fileTree,
+                          [currentFile]: {
+                            file: {
+                              contents: updatedContent,
+                            },
+                          },
+                        };
+                        setFileTree(ft);
+                        saveFileTree(ft);
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: hljs.highlight(
+                          "javascript",
+                          fileTree[currentFile].file.contents
+                        ).value,
+                      }}
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        paddingBottom: "25rem",
+                        counterSet: "line-numbering",
+                      }}
+                    />
+                  </pre>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+      </section>
     </main>
   );
 };
