@@ -10,7 +10,7 @@ import axios from "../config/axios";
 import { initializeSocket, receiveMsg, sendMsg } from "../config/socket";
 import { UserContext } from "../context/UserContext";
 import hljs from "highlight.js";
-import "highlight.js/styles/github.css";
+import { getWebContainer } from "../config/webContainer";
 
 function SyntaxHighlightedCode(props) {
   const ref = useRef(null);
@@ -44,6 +44,7 @@ const Projects = () => {
   const [fileTree, setFileTree] = useState({});
   const [currentFile, setCurrentFile] = useState(null);
   const [openFiles, setOpenFiles] = useState([]);
+  const [webContainer, setWebContainer] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -99,22 +100,26 @@ const Projects = () => {
   useEffect(() => {
     initializeSocket(project._id);
 
+    if (!webContainer) {
+      getWebContainer().then((container) => {
+        setWebContainer(container);
+        console.log("container started");
+      });
+    }
+
     receiveMsg("project-message", (data) => {
-      try {
-        const message =
-          typeof data.message === "string"
-            ? JSON.parse(data.message)
-            : data.message;
+      if (data.sender._id == "ai") {
+        const message = JSON.parse(data.message);
 
+        console.log(message);
+
+        webContainer?.mount(message.fileTree);
         if (message.fileTree) {
-          setFileTree(message.fileTree);
+          setFileTree(message.fileTree || {});
         }
-
         setMessages((prevMessages) => [...prevMessages, data]);
-      } catch (error) {
-        console.error("Error parsing message:", error);
-        console.error("Invalid message content:", data.message);
-        setMessages(error, data.message);
+      } else {
+        setMessages((prevMessages) => [...prevMessages, data]);
       }
     });
 
@@ -155,6 +160,30 @@ const Projects = () => {
       });
   }
 
+  const handleRun = async () => {
+    try {
+      const installProcess = await webContainer.spawn("npm", ["install"]);
+      installProcess.output.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            console.log(chunk);
+          },
+        })
+      );
+
+      const runProcess = await webContainer.spawn("npm", ["start"]);
+      runProcess.output.pipeTo(
+        new WritableStream({
+          write(chunk) {
+            console.log(chunk);
+          },
+        })
+      );
+    } catch (error) {
+      console.error("Error running process:", error);
+    }
+  };
+
   return (
     <main className="h-screen w-screen flex">
       <section className="relative h-full flex flex-col min-w-96 bg-slate-300">
@@ -178,7 +207,7 @@ const Projects = () => {
             ref={messageBoxRef}
             className="messageBox flex-grow flex flex-col gap-2 p-1 overflow-auto max-h-full"
           >
-            {messages.map((message, index) => (
+            {messages?.map((message, index) => (
               <div
                 key={index}
                 className={`${
@@ -302,9 +331,9 @@ const Projects = () => {
             ))}
           </div>
         </section>
-        {currentFile && (
-          <section className="code-editor flex flex-col flex-grow h-full font-mono">
-            <div className="top flex">
+        <section className="code-editor flex flex-col flex-grow h-full shrink">
+          <div className="top flex justify-between w-full ">
+            <div className="files flex ">
               {openFiles?.map((file, index) => {
                 return (
                   <div
@@ -326,45 +355,55 @@ const Projects = () => {
                 );
               })}
             </div>
-            <div className="bottom flex flex-grow max-w-full shrink overflow-auto">
-              {fileTree[currentFile] && (
-                <div className="code-editor-area h-full overflow-auto flex-grow bg-slate-950">
-                  <pre className="hljs h-full">
-                    <code
-                      className="hljs h-full outline-none"
-                      contentEditable
-                      suppressContentEditableWarning
-                      onBlur={(e) => {
-                        const updatedContent = e.target.innerText;
-                        const ft = {
-                          ...fileTree,
-                          [currentFile]: {
-                            file: {
-                              contents: updatedContent,
-                            },
-                          },
-                        };
-                        setFileTree(ft);
-                        saveFileTree(ft);
-                      }}
-                      dangerouslySetInnerHTML={{
-                        __html: hljs.highlight(
-                          "javascript",
-                          fileTree[currentFile].file.contents
-                        ).value,
-                      }}
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        paddingBottom: "25rem",
-                        counterSet: "line-numbering",
-                      }}
-                    />
-                  </pre>
-                </div>
-              )}
+            <div className="actions flex gap-2">
+              <button
+                onClick={handleRun}
+                className="p-2 px-4 bg-slate-300 text-black"
+              >
+                run
+              </button>
             </div>
-          </section>
-        )}
+          </div>
+          <div className="bottom flex flex-grow max-w-full shrink overflow-auto">
+            {fileTree[currentFile] && (
+              <div className="code-editor-area h-full overflow-auto flex-grow bg-slate-950">
+                <pre className="hljs h-full">
+                  <code
+                    className="hljs h-full outline-none"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const updatedContent = e.target.innerText;
+                      const ft = {
+                        ...fileTree,
+                        [currentFile]: {
+                          file: {
+                            contents: updatedContent,
+                          },
+                        },
+                      };
+                      setFileTree(ft);
+                      saveFileTree(ft);
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: hljs.highlight(
+                        fileTree[currentFile]?.file?.contents || "",
+                        {
+                          language: "javascript",
+                        }
+                      ).value,
+                    }}
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      paddingBottom: "25rem",
+                      counterSet: "line-numbering",
+                    }}
+                  />
+                </pre>
+              </div>
+            )}
+          </div>
+        </section>
       </section>
     </main>
   );
