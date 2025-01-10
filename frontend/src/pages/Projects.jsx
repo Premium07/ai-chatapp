@@ -46,6 +46,7 @@ const Projects = () => {
   const [openFiles, setOpenFiles] = useState([]);
   const [webContainer, setWebContainer] = useState(null);
   const [iframeUrl, setIframeUrl] = useState(null);
+  const [runProcess, setRunProcess] = useState(null)
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -174,8 +175,12 @@ const Projects = () => {
         })
       );
 
-      const runProcess = await webContainer.spawn("npm", ["start"]);
-      runProcess.output.pipeTo(
+      if(runProcess) {
+        runProcess.kill()
+      }
+
+      let tempRunProcess = await webContainer.spawn("npm", ["start"]);
+      tempRunProcess.output.pipeTo(
         new WritableStream({
           write(chunk) {
             console.log(chunk);
@@ -183,6 +188,7 @@ const Projects = () => {
         })
       );
 
+      setRunProcess(tempRunProcess)
       webContainer.on("server-ready", (port, url) => {
         console.log(url, port);
         setIframeUrl(url);
@@ -413,7 +419,17 @@ const Projects = () => {
           </div>
         </section>
         {iframeUrl && webContainer && (
-          <iframe src={iframeUrl} className="w-1/2 h-full"></iframe>
+          <div className="min-w-96 flex flex-col h-full">
+            <div className="address-bar">
+              <input
+                type="text"
+                value={iframeUrl}
+                onChange={(e) => setIframeUrl(e.target.value)}
+                className="w-full p-2 px-4 bg-slate-200"
+              />
+            </div>
+            <iframe src={iframeUrl} className="w-full h-full"></iframe>
+          </div>
         )}
       </section>
     </main>

@@ -6,6 +6,7 @@ import {
   addUsersToProject,
   getAllProjects,
   getProjectById,
+  updateFileTree,
 } from "../controllers/project.controller.js";
 
 const router = Router();
@@ -33,5 +34,13 @@ router.put(
 );
 
 router.get("/getproject/:projectId", authUser, getProjectById);
+
+router.put(
+  "/update-filetree",
+  authUser,
+  body("projectId").isString().withMessage("Project Id is required"),
+  body("fileTree").isObject().withMessage("File Tree is required"),
+  updateFileTree
+);
 
 export default router;
