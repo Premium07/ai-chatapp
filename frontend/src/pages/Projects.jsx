@@ -46,7 +46,7 @@ const Projects = () => {
   const [openFiles, setOpenFiles] = useState([]);
   const [webContainer, setWebContainer] = useState(null);
   const [iframeUrl, setIframeUrl] = useState(null);
-  const [runProcess, setRunProcess] = useState(null)
+  const [runProcess, setRunProcess] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -151,7 +151,7 @@ const Projects = () => {
 
   function saveFileTree(ft) {
     axios
-      .put("/projects/update-file-tree", {
+      .put("/projects/update-filetree", {
         projectId: project._id,
         fileTree: ft,
       })
@@ -175,8 +175,8 @@ const Projects = () => {
         })
       );
 
-      if(runProcess) {
-        runProcess.kill()
+      if (runProcess) {
+        runProcess.kill();
       }
 
       let tempRunProcess = await webContainer.spawn("npm", ["start"]);
@@ -188,7 +188,7 @@ const Projects = () => {
         })
       );
 
-      setRunProcess(tempRunProcess)
+      setRunProcess(tempRunProcess);
       webContainer.on("server-ready", (port, url) => {
         console.log(url, port);
         setIframeUrl(url);
@@ -197,6 +197,7 @@ const Projects = () => {
       console.error("Error running process:", error);
     }
   };
+
 
   return (
     <main className="h-screen w-screen flex">
