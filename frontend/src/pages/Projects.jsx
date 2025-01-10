@@ -45,6 +45,7 @@ const Projects = () => {
   const [currentFile, setCurrentFile] = useState(null);
   const [openFiles, setOpenFiles] = useState([]);
   const [webContainer, setWebContainer] = useState(null);
+  const [iframeUrl, setIframeUrl] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prevSelectedUserId) => {
@@ -127,6 +128,7 @@ const Projects = () => {
       .get(`/projects/getproject/${location.state.project._id}`)
       .then((res) => {
         setProject(res.data.project);
+        setFileTree(res.data.project.fileTree || {});
       })
       .catch((err) => console.log(err.message));
 
@@ -162,6 +164,7 @@ const Projects = () => {
 
   const handleRun = async () => {
     try {
+      await webContainer.mount(fileTree);
       const installProcess = await webContainer.spawn("npm", ["install"]);
       installProcess.output.pipeTo(
         new WritableStream({
@@ -179,6 +182,11 @@ const Projects = () => {
           },
         })
       );
+
+      webContainer.on("server-ready", (port, url) => {
+        console.log(url, port);
+        setIframeUrl(url);
+      });
     } catch (error) {
       console.error("Error running process:", error);
     }
@@ -211,7 +219,7 @@ const Projects = () => {
               <div
                 key={index}
                 className={`${
-                  message.sender._id === "ai" ? "max-w-96" : " max-w-56"
+                  message.sender._id === "ai" ? "max-w-80" : " max-w-52"
                 } ${
                   message.sender._id == user._id && "ml-auto"
                 } flex flex-col bg-slate-50 w-fit rounded-md p-2`}
@@ -404,6 +412,9 @@ const Projects = () => {
             )}
           </div>
         </section>
+        {iframeUrl && webContainer && (
+          <iframe src={iframeUrl} className="w-1/2 h-full"></iframe>
+        )}
       </section>
     </main>
   );
