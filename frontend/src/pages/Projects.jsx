@@ -202,7 +202,7 @@ const Projects = () => {
   return (
     <main className="h-screen w-screen flex">
       <section className="relative h-full flex flex-col min-w-96 bg-slate-300">
-        <header className="absolute top-0 flex justify-between items-center p-2 px-4 w-full bg-slate-100">
+        <header className="absolute z-10 top-0 flex justify-between items-center p-2 px-4 w-full bg-slate-100">
           <button
             className="flex items-center gap-1"
             onClick={() => setIsModalOpen(true)}
